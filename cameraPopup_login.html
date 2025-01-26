@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Verification</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #000;
+            color: #fff;
+        }
+        video {
+            width: 100%;
+            max-width: 480px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <video id="video" autoplay></video>
+    <script>
+        const video = document.getElementById('video');
+        let stream = null;
+
+        // Start the camera
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(camStream => {
+                stream = camStream;
+                video.srcObject = camStream;
+
+                // Automatically start verification after the video stream is ready
+                video.addEventListener('loadeddata', startVerification);
+            })
+            .catch(err => alert('Error accessing camera: ' + err.message));
+
+        function startVerification() {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            const capturedImage = canvas.toDataURL('image/png');
+
+            // Communicate with the parent window
+            if (window.opener && !window.opener.closed) {
+                window.opener.verifyCapturedImage(capturedImage, (success) => {
+                    if (success) {
+                        alert('Face verification successful. Closing window...');
+                        window.close(); // Close popup if verification succeeds
+                    } else {
+                        alert('Face verification failed. Please try again.');
+                    }
+                });
+            } else {
+                alert('Error: Unable to communicate with the parent window.');
+            }
+        }
+
+        // Stop the camera when the popup is closed
+        window.addEventListener('beforeunload', () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+</body>
+</html>

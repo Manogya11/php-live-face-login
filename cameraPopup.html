@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #000;
+            color: #fff;
+        }
+        video {
+            width: 100%;
+            max-width: 480px;
+            border-radius: 8px;
+        }
+        button {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <video id="video" autoplay></video>
+    <button id="capture">Capture</button>
+    <script>
+        const video = document.getElementById('video');
+        const captureButton = document.getElementById('capture');
+        let stream = null;
+
+        // Start camera
+        navigator.mediaDevices.getUserMedia({ video: true }).then(camStream => {
+            stream = camStream;
+            video.srcObject = camStream;
+        }).catch(err => alert('Error accessing camera: ' + err.message));
+
+        // Capture button
+        captureButton.addEventListener('click', () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            const photoData = canvas.toDataURL('image/png');
+
+            // Send data back to parent window
+            if (window.opener && !window.opener.closed) {
+                // Send photo data to parent window
+                window.opener.document.getElementById('photo').value = photoData;
+
+                // Show success message
+                alert('Photo Captured and Sent to Parent Window!');
+            } else {
+                alert('Error: Unable to communicate with the parent window.');
+            }
+        });
+
+        // Stop camera on close
+        window.addEventListener('beforeunload', () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: url('img 1.jpeg') no-repeat center center fixed;
+            background-size: cover;
+        }
+        .card {
+            background: transparent;
+            border: none;
+            box-shadow: none;
+        }
+        .btn-link {
+            color: #141413;
+            text-decoration: none;
+        }
+        .btn-link:hover {
+            color: #1d1b1b;
+            text-decoration: underline;
+        }
+        .btn-primary {
+            background-color: rgba(172, 74, 150, 0.815);
+            color: #141413;
+            text-decoration: underline;
+        }
+        .password-container {
+            position: relative;
+        }
+        .password-toggle {
+            position: absolute;
+            top: 58%;
+            right: 30px;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h3 class="text-center mb-4">User Login</h3>
+                        <form id="loginForm">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" name="username" id="username" class="form-control" placeholder="Enter your username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" name="password" id="password" class="form-control" placeholder="Enter your password" required>
+                                <span id="togglePassword" class="password-toggle">👁️</span>
+                            </div>
+                            <div class="text-center">
+                                <button type="button" id="startLogin" class="btn btn-primary w-100">Start Login</button>
+                            </div>
+                        </form>
+                        <div class="d-flex justify-content-between mt-4">
+                            <button id="registerNewUser" class="btn btn-link">Register New User</button>
+                            <button id="forgotPassword" class="btn btn-link">Forgot Password?</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+
+        togglePassword.addEventListener('click', () => {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            togglePassword.textContent = type === 'password' ? '👁️' : '🙈';
+        });
+
+        let popupWindow = null; // Define popupWindow globally
+        const usernameInput = document.getElementById('username');
+        const startLoginButton = document.getElementById('startLogin');
+        const registerNewUserButton = document.getElementById('registerNewUser');
+        const forgotPasswordButton = document.getElementById('forgotPassword');
+
+        registerNewUserButton.addEventListener('click', () => {
+            window.location.href = 'register.html';
+        });
+
+        forgotPasswordButton.addEventListener('click', () => {
+            window.location.href = 'forgot_password.html';
+        });
+
+        startLoginButton.addEventListener('click', () => {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if (!username || !password) {
+                alert("Please enter username and password.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('username', username);
+            formData.append('password', password);
+
+            fetch('login.php', {
+                method: 'POST',
+                body: formData,
+            })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.status === "success") {
+                        alert(result.message);
+                        openCameraPopup(); // Open the camera popup
+                    } else {
+                        alert(result.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert("An unexpected error occurred. Please try again.");
+                });
+        });
+
+        function openCameraPopup() {
+            if (popupWindow && !popupWindow.closed) {
+                popupWindow.focus();
+            } else {
+                popupWindow = window.open('camerapopup_login.html', 'Camera Verification', 'width=500,height=600');
+            }
+        }
+
+        function verifyCapturedImage(capturedImage, callback) {
+            const formData = new FormData();
+            formData.append('username', usernameInput.value);
+            formData.append('password', passwordInput.value);
+            formData.append('photo', capturedImage);
+
+            fetch('login.php', {
+                method: 'POST',
+                body: formData,
+            })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.status === "success") {
+                        alert(result.message);
+                        callback(true);
+                        if (popupWindow) popupWindow.close();
+                        window.location.href = 'login_success.html';
+                    } else if (result.status === "error") {
+                        alert(result.message);
+                        callback(false);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert("An unexpected error occurred during face verification.");
+                    callback(false);
+                });
+        }
+    </script>
+</body>
+</html>

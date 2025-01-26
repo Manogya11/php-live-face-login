@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body,html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        .container-fluid {
+            display: flex;
+            flex-wrap: nowrap;
+            height: 100vh;
+        }
+        .image-section {
+            flex: 1;
+            background: url('img 15.jpeg') no-repeat center center;
+            background-size: cover;
+            height: 100%;
+        }
+        .form-section {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            background-color: #f8f9fa;
+            overflow-y: auto; /* Makes form scrollable */
+            padding: 20px;
+            position: relative;
+        }
+        .card {
+            width: 100%;
+            max-width: 400px;
+            background: rgba(153, 84, 218, 0.9);
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .btn-success {
+            background-color: #f7e441;
+            color: #0f0f0f;
+            text-decoration: none;
+        }
+        .btn-success:hover {
+            background-color: #7a46ad;
+            color: #fff;
+        }
+        .form-section .card h3 {
+            margin-top: 0;
+        }
+        #cameraWindow {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            background-color: #000;
+            padding: 10px;
+            border: 2px solid #fff;
+            border-radius: 10px;
+            display: none; /* Initially hidden */
+        }
+        #cameraWindow video {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        .password-container {
+            position: relative;
+        }
+        .password-toggle {
+            position: absolute;
+            top: 37%;
+            right: 30px;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 1.2em;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="image-section"></div>
+            <div class="form-section">
+                <div id="cameraWindow">
+                    <video autoplay></video>
+                    <button id="closeCamera" class="btn btn-danger w-100 mt-2">Close Camera</button>
+                </div>
+                <div class="card shadow-sm p-4">
+                        <h3 class="text-center mb-4">User Registration</h3>
+                        <form id="registrationForm" method="POST" enctype="multipart/form-data" action="register.php">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" name="username" class="form-control" placeholder="Enter username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" name="email" class="form-control" placeholder="Enter email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" name="password" id="password" class="form-control" placeholder="Enter password" required>
+                                <span id="togglePassword" class="password-toggle">👁️</span>
+                            </div>
+                            <div class="mb-3">
+                                <label for="mobile" class="form-label">Mobile</label>
+                                <input type="text" name="mobile" class="form-control" placeholder="Enter mobile number" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="address" class="form-label">Address</label>
+                                <textarea name="address" class="form-control" placeholder="Enter your address" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="occupation" class="form-label">Occupation</label>
+                                <input type="text" name="occupation" class="form-control" placeholder="Enter occupation" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="age" class="form-label">Age</label>
+                                <input type="number" name="age" class="form-control" placeholder="Enter age" required>
+                            </div>
+                            <div class="text-center">
+                                <button type="button" id="startCamera" class="btn btn-secondary">Open Camera</button>
+                                <button type="button" id="capture" class="btn btn-primary" style="display: none;">Capture Photo</button>
+                            </div>
+                            <input type="hidden" name="photo" id="photo">
+                            <button type="submit" class="btn btn-success w-100 mt-3">Register</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+     <script>
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+     
+        togglePassword.addEventListener('click', () => {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            togglePassword.textContent = type === 'password' ? '👁️' : '🙈';
+        });
+
+        const cameraWindow = document.getElementById('cameraWindow');
+        const video = cameraWindow.querySelector('video');
+        const closeCameraButton = document.getElementById('closeCamera');
+        const startCameraButton = document.getElementById('startCamera');
+        const captureButton = document.getElementById('capture');
+        const photoInput = document.getElementById('photo');
+        let stream = null;
+
+        startCameraButton.addEventListener("click", () => {
+        const popupWidth = 500; // Width of the popup window
+        const popupHeight = 400; // Height of the popup window
+        const screenX = window.screenX || window.screenLeft; // X-coordinate of the screen
+        const screenY = window.screenY || window.screenTop; // Y-coordinate of the screen
+        const screenWidth = window.innerWidth || document.documentElement.clientWidth; // Screen width
+        const screenHeight = window.innerHeight || document.documentElement.clientHeight; // Screen height
+
+        // Calculate the center position for the popup
+        const popupX = screenX + (screenWidth - popupWidth) / 2;
+        const popupY = screenY + (screenHeight - popupHeight) / 2;
+
+        // Open the popup window in the center of the screen
+        const cameraPopup = window.open(
+            "cameraPopup.html", // Path to your popup HTML file
+            "CameraPopup",
+            `width=${popupWidth},height=${popupHeight},top=${popupY},left=${popupX},resizable=no`
+        );
+
+        // Pass the parent window's reference to the popup
+        window.cameraPopup = cameraPopup;
+    });
+
+        closeCameraButton.addEventListener('click', () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            cameraWindow.style.display = 'none';
+            startCameraButton.style.display = 'block';
+            captureButton.style.display = 'none';
+        });
+
+        captureButton.addEventListener('click', () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            photoInput.value = canvas.toDataURL('image/png');
+            alert('Photo Captured!');
+            closeCameraButton.click();
+        });
+    </script>
+</body>
+</html>
